@@ -28,6 +28,7 @@
     },
     "files": [
       "main.js",
+      "preset-ui.js",
       "index.html",
       "preload.js",
       "deepseek-logo.png"

@@ -25,19 +25,13 @@ contextBridge.exposeInMainWorld('electron', {
   }
 });
 
-window.addEventListener('beforeunload', () => {
-    const state = {
-        url: window.location.href,
-        scrollPosition: window.scrollY,
-    };
-    localStorage.setItem('appState', JSON.stringify(state));
+contextBridge.exposeInMainWorld('electronAPI', {
+  loadPresets: () => ipcRenderer.invoke('load-presets'),
+  savePresets: (presets) => ipcRenderer.invoke('save-presets', presets),
+  readClipboard: () => ipcRenderer.invoke('read-clipboard'),
+  writeClipboard: (text) => ipcRenderer.invoke('write-clipboard', text),
 });
 
 window.addEventListener('load', () => {
     localStorage.clear();
-    const savedState = JSON.parse(localStorage.getItem('appState'));
-    if (savedState) {
-        window.location.href = savedState.url;
-        window.scrollTo(0, savedState.scrollPosition);
-    }
 });
