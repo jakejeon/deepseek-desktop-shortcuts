@@ -122,6 +122,21 @@ function createMainWindow() {
     mainWindow.on('maximize', saveWindowState);
     mainWindow.on('unmaximize', saveWindowState);
 
+    mainWindow.on('focus', () => {
+        mainWindow.webContents.executeJavaScript(`
+            (function(){
+                var tas = document.querySelectorAll('textarea');
+                for (var i = 0; i < tas.length; i++) {
+                    var rect = tas[i].getBoundingClientRect();
+                    if (rect.width > 0 && rect.height > 0) {
+                        tas[i].focus();
+                        return;
+                    }
+                }
+            })();
+        `).catch(function(){});
+    });
+
     mainWindow.on('close', (event) => {
         saveWindowState();
         if (!app.isQuiting) {
