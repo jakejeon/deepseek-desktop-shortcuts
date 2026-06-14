@@ -52,20 +52,33 @@ function applyPresetByIndex(idx) {
         try { clipboard.writeText(originalClip); } catch(e) {}
         return;
     }
-    mainWindow.webContents.focus();
-    mainWindow.webContents.executeJavaScript(
-        'var tas=document.querySelectorAll("textarea");var ta=null;' +
-        'for(var i=0;i<tas.length;i++){if(tas[i].placeholder&&tas[i].placeholder.indexOf("DeepSeek")>=0){ta=tas[i];break}}' +
-        'if(!ta)for(var i=0;i<tas.length;i++){if(tas[i].name==="search"){ta=tas[i];break}}' +
-        'if(ta){ta.focus();ta.select();}'
-    ).catch(function() {}).then(function() {
-        setTimeout(function() {
-            try { mainWindow.webContents.paste(); } catch(e) {}
+
+    const wasFocused = mainWindow.isFocused();
+    if (!wasFocused) {
+        mainWindow.once('focus', () => setTimeout(doPaste, 300));
+    }
+    mainWindow.show();
+    mainWindow.focus();
+
+    function doPaste() {
+        mainWindow.webContents.executeJavaScript(
+            'var tas=document.querySelectorAll("textarea");var ta=null;' +
+            'for(var i=0;i<tas.length;i++){if(tas[i].placeholder&&tas[i].placeholder.indexOf("DeepSeek")>=0){ta=tas[i];break}}' +
+            'if(!ta)for(var i=0;i<tas.length;i++){if(tas[i].name==="search"){ta=tas[i];break}}' +
+            'if(ta){ta.focus();ta.select();}'
+        ).catch(function() {}).then(function() {
             setTimeout(function() {
-                try { clipboard.writeText(originalClip); } catch(e) {}
-            }, 300);
-        }, 200);
-    });
+                try { mainWindow.webContents.paste(); } catch(e) {}
+                setTimeout(function() {
+                    try { clipboard.writeText(originalClip); } catch(e) {}
+                }, 300);
+            }, 200);
+        });
+    }
+
+    if (wasFocused) {
+        doPaste();
+    }
 }
 
 function createMainWindow() {
@@ -123,18 +136,12 @@ function createMainWindow() {
     mainWindow.on('unmaximize', saveWindowState);
 
     mainWindow.on('focus', () => {
-        mainWindow.webContents.executeJavaScript(`
-            (function(){
-                var tas = document.querySelectorAll('textarea');
-                for (var i = 0; i < tas.length; i++) {
-                    var rect = tas[i].getBoundingClientRect();
-                    if (rect.width > 0 && rect.height > 0) {
-                        tas[i].focus();
-                        return;
-                    }
-                }
-            })();
-        `).catch(function(){});
+        mainWindow.webContents.executeJavaScript(
+            'var tas=document.querySelectorAll("textarea");var ta=null;' +
+            'for(var i=0;i<tas.length;i++){if(tas[i].placeholder&&tas[i].placeholder.indexOf("DeepSeek")>=0){ta=tas[i];break}}' +
+            'if(!ta)for(var i=0;i<tas.length;i++){if(tas[i].name==="search"){ta=tas[i];break}}' +
+            'if(ta)ta.focus();'
+        ).catch(function(){});
     });
 
     mainWindow.on('close', (event) => {
